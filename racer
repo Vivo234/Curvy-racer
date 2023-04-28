@@ -1,0 +1,84 @@
+// Define variables for the game
+var canvas = document.getElementById("gameCanvas");
+var context = canvas.getContext("2d");
+var carImage = new Image();
+carImage.src = "car.png";
+var carX = canvas.width / 2 - 25;
+var carY = canvas.height - 100;
+var carSpeed = 5;
+var roadWidth = 400;
+var roadColor = "#808080";
+var roadSegments = [];
+var segmentLength = 200;
+var totalSegments = Math.floor(canvas.height / segmentLength);
+var segmentCurvature = 0.1;
+var playerSegment = 0;
+
+// Generate road segments
+for (var i = 0; i < totalSegments; i++) {
+  var curve = (i % 3 === 0) ? -segmentCurvature : segmentCurvature;
+  var segment = {
+    index: i,
+    curve: curve,
+    y: i * segmentLength,
+    startY: i * segmentLength,
+    endY: (i + 1) * segmentLength,
+  };
+  roadSegments.push(segment);
+}
+
+// Handle keyboard input
+document.addEventListener("keydown", function (event) {
+  if (event.key === "ArrowLeft") {
+    carX -= carSpeed;
+  } else if (event.key === "ArrowRight") {
+    carX += carSpeed;
+  }
+});
+
+// Define the game loop
+function gameLoop() {
+  // Clear the canvas
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Move the road segments
+  roadSegments.forEach(function (segment) {
+    segment.y += carSpeed;
+    if (segment.y > canvas.height) {
+      segment.y -= totalSegments * segmentLength;
+      segment.startY -= totalSegments * segmentLength;
+      segment.endY -= totalSegments * segmentLength;
+    }
+  });
+
+  // Update player segment
+  playerSegment = Math.floor(carY / segmentLength);
+
+  // Draw the road
+  roadSegments.forEach(function (segment) {
+    var curve = segment.curve * (segment.y - playerSegment * segmentLength) / segmentLength;
+    var segmentWidth = roadWidth * (1 + curve * 2);
+    var segmentX = canvas.width / 2 - segmentWidth / 2;
+
+    // Draw road segment
+    context.fillStyle = roadColor;
+    context.fillRect(segmentX, segment.y, segmentWidth, segmentLength);
+
+    // Draw road markings
+    context.strokeStyle = "#ffffff";
+    context.lineWidth = 5;
+    context.beginPath();
+    context.moveTo(segmentX, segment.y + segmentLength / 2);
+    context.lineTo(segmentX + segmentWidth, segment.y + segmentLength / 2);
+    context.stroke();
+  });
+
+  // Draw the car
+  context.drawImage(carImage, carX, carY, 50, 100);
+
+  // Request the next frame of the game loop
+  requestAnimationFrame(gameLoop);
+}
+
+// Start the game loop
+requestAnimationFrame(gameLoop);
